@@ -24,5 +24,9 @@
   "homepage": "https://github.com/vdemedes/net-socket",
   "dependencies": {
     "delegates": "^0.1.0"
+  },
+  "devDependencies": {
+    "chai": "^2.1.1",
+    "mocha": "^2.2.0"
   }
 }
