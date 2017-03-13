@@ -66,15 +66,19 @@ socket.monitor = function () {
     this._connectTimeout = setTimeout(function () {
       self._reconnect();
     }, delay);
+
+    delay *= backoff;
   });
   
   this.socket.on('error', function (err) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET') {
-      return this._connectTimeout = setTimeout(function () {
+      var timeout = this._connectTimeout = setTimeout(function () {
         self._reconnect();
       }, delay);
       
       delay *= backoff;
+
+      return timeout;
     };
     
     throw err;
