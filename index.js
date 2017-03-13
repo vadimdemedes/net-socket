@@ -72,13 +72,7 @@ socket.monitor = function () {
   
   this.socket.on('error', function (err) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET') {
-      var timeout = this._connectTimeout = setTimeout(function () {
-        self._reconnect();
-      }, delay);
-      
-      delay *= backoff;
-
-      return timeout;
+      return;
     };
     
     throw err;
