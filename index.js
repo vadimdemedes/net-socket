@@ -12,7 +12,7 @@ var net = require('net');
 
 function Socket (options) {
   this.socket = new net.Socket(options);
-  
+  this._connectTimeout = undefined;
   this.monitor();
 }
 
@@ -36,11 +36,33 @@ socket.connect = function () {
 
 
 /**
+ * Reconnect timeout management
+ */
+
+socket._stopReconnectTimer = function () {
+  if (this._connectTimeout) {
+    clearTimeout(this._connectTimeout);
+    this._connectTimeout = undefined;
+  }
+}
+
+socket._startReconnectTimer = function (delay) {
+  var self = this;
+  this._stopReconnectTimer();
+
+  this._connectTimeout = setTimeout(function () {
+    self._reconnect();
+  }, delay);
+
+  return this._connectTimeout;
+}
+
+/**
  * Stop monitoring
  */
 
 socket.destroy = function () {
-  clearTimeout(this._connectTimeout);
+  this._stopReconnectTimer();
   this.socket.removeAllListeners();
   
   return this.socket.destroy();
@@ -58,23 +80,18 @@ socket.monitor = function () {
   var delay = 1000;
   
   this.socket.on('connect', function () {
-    clearTimeout(this._connectTimeout);
+    self._stopReconnectTimer();
     delay = 1000;
   });
-  
+
   this.socket.on('close', function () {
-    this._connectTimeout = setTimeout(function () {
-      self._reconnect();
-    }, delay);
+    self._startReconnectTimer(delay);
+    delay *= backoff;
   });
   
   this.socket.on('error', function (err) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET') {
-      return this._connectTimout = setTimeout(function () {
-        self._reconnect();
-      }, delay);
-      
-      delay *= backoff;
+      return;
     };
     
     throw err;
